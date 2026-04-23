@@ -33,9 +33,11 @@ Private NumRAFRemain As Integer
 Private AirfieldLeft As Integer
 Private RepairServ1 As Integer
 Private RepairServ2 As Integer
+Private NumRepairServRemain As Integer
 Private ComC As Integer
 Private Bunker1 As Integer
 Private Bunker2 As Integer
+Private NumBunkerRemain As Integer
 Private CityStruct(1 To 12) As Integer
 
 Private Turrets(1 To BOARD_COLS, 1 To TIME_END) As Turret
@@ -113,6 +115,7 @@ Sub StartGame_Click()
                 RepairServ2p = True
             End If
         Loop
+        NumRepairServRemain = 2
         'Place command center
         ComCp = False
         Do While ComCp = False
@@ -142,6 +145,7 @@ Sub StartGame_Click()
                 Bunker2p = True
             End If
         Loop
+        NumBunkerRemain = 2
         
         R = 1
         For j = 1 To BOARD_COLS
@@ -2667,15 +2671,23 @@ Sub NextTurnPostFire()
         
         Cells(14, 25) = (4 - StructureStatus(ComC, incr)) / 4
         
-        RepServRemain = 0
-        If StructureStatus(RepairServ1, incr) < 4 Then RepServRemain = RepServRemain + 1
-        If StructureStatus(RepairServ2, incr) < 4 Then RepServRemain = RepServRemain + 1
-        Cells(15, 25) = RepServRemain & " of 2"
+        If StructureStatus(RepairServ1, incr) >= 4 And StructureStatus(RepairServ1, incr - 1) < 4 Then
+            NumRepairServRemain = NumRepairServRemain - 1
+        End If
+        If StructureStatus(RepairServ2, incr) >= 4 And StructureStatus(RepairServ2, incr - 1) < 4 Then
+            NumRepairServRemain = NumRepairServRemain - 1
+        End If
         
-        BunkerRemain = 0
-        If StructureStatus(Bunker1, incr) < 4 Then BunkerRemain = BunkerRemain + 1
-        If StructureStatus(Bunker2, incr) < 4 Then BunkerRemain = BunkerRemain + 1
-        Cells(16, 25) = BunkerRemain & " of 2"
+        Cells(15, 25) = NumRepairServRemain & " of 2"
+        
+        If StructureStatus(Bunker1, incr) >= 4 And StructureStatus(Bunker1, incr - 1) < 4 Then
+            NumBunkerRemain = NumBunkerRemain - 1
+        End If
+        If StructureStatus(Bunker2, incr) >= 4 And StructureStatus(Bunker2, incr - 1) < 4 Then
+            NumBunkerRemain = NumBunkerRemain - 1
+        End If
+        
+        Cells(16, 25) = NumBunkerRemain & " of 2"
         
         AirfieldStatus = 0
         For i = 0 To 3
@@ -2890,16 +2902,19 @@ Sub NextTurnPostFire()
             If (StructureStatus(AirfieldLeft, 1) < 4 Or StructureStatus(AirfieldLeft + 1, 1) < 4 Or _
             StructureStatus(AirfieldLeft + 2, 1) < 4 Or StructureStatus(AirfieldLeft + 3, 1) < 4) Then
                 Worksheets("London Siege").RAFShopPortal.Visible = True
+                Worksheets("London Siege").RAFShopPortal.Enabled = True
             Else
                 Worksheets("London Siege").RAFShopPortal.Visible = False
             End If
-            If StructureStatus(RepairServ1, 1) < 4 Or StructureStatus(RepairServ2, 1) < 4 Then
+            If NumRepairServRemain > 0 Then
                 Worksheets("London Siege").RepairShopPortal.Visible = True
+                Worksheets("London Siege").RepairShopPortal.Enabled = True
             Else
                 Worksheets("London Siege").RepairShopPortal.Visible = False
             End If
-            If StructureStatus(Bunker1, 1) < 4 Or StructureStatus(Bunker2, 1) < 4 Then
+            If NumBunkerRemain > 0 Then
                 Worksheets("London Siege").AmmoShopPortal.Visible = True
+                Worksheets("London Siege").AmmoShopPortal.Enabled = True
             Else
                 Worksheets("London Siege").AmmoShopPortal.Visible = False
             End If
@@ -3543,14 +3558,23 @@ Sub RAFShopPortal()
         Next j
     Next i
     
+    Cells(5, 45) = "Rocket"
     Cells(6, 45) = "Storage"
     Cells(7, 45) = Rockets
     Cells(4, 30) = "Health"
     Cells(7, 30) = "Rockets"
-    Cells(11, 30) = "Rocket = 100"
-    Cells(12, 30) = "Max 6 per Fighter"
-    Cells(13, 30) = "Repairs = 200"
-    Cells(14, 30) = "New Fighter = 2000"
+    Cells(8, 30) = "Max 6 per Fighter"
+    If NumBunkerRemain = 2 Then
+        Cells(11, 30) = "Rocket = 100"
+    ElseIf NumBunkerRemain = 1 Then
+        Cells(11, 30) = "Rocket = 200"
+    End If
+    If NumRepairServRemain = 2 Then
+        Cells(12, 30) = "Repairs = 200"
+    ElseIf NumRepairServRemain = 1 Then
+        Cells(12, 30) = "Repairs = 400"
+    End If
+    Cells(13, 30) = "New Fighter = 2000"
     
     RAFShopVisibility
     
@@ -3569,37 +3593,14 @@ Sub RAFShopVisibility()
                         Cells(6, 34 + 2 * j) = RAF_ICON
                         Cells(4, 34 + 2 * j) = Int((RAFStatus(i, 7, 1) / 3) * 100) & "%"
                         Range(Cells(4, 34 + 2 * j).Address).Font.Size = 5
-                        If j = 0 Then
-                            Worksheets("London Siege").SS08.Visible = True
-                            If RAFStatus(i, 7, 1) < 3 Then
-                                Worksheets("London Siege").ST08.Visible = True
-                            Else
-                                Worksheets("London Siege").ST08.Visible = False
-                            End If
-                        ElseIf j = 1 Then
-                            Worksheets("London Siege").SS10.Visible = True
-                            If RAFStatus(i, 7, 1) < 3 Then
-                                Worksheets("London Siege").ST10.Visible = True
-                            Else
-                                Worksheets("London Siege").ST10.Visible = False
-                            End If
-                        ElseIf j = 2 Then
-                            Worksheets("London Siege").SS12.Visible = True
-                            If RAFStatus(i, 7, 1) < 3 Then
-                                Worksheets("London Siege").ST12.Visible = True
-                            Else
-                                Worksheets("London Siege").ST12.Visible = False
-                            End If
-                        ElseIf j = 3 Then
-                            Worksheets("London Siege").SS14.Visible = True
-                            If RAFStatus(i, 7, 1) < 3 Then
-                                Worksheets("London Siege").ST14.Visible = True
-                            Else
-                                Worksheets("London Siege").ST14.Visible = False
-                            End If
+                        Worksheets("London Siege").Shapes("SS" & Format(8 + 2 * j, "00")).Visible = True
+                        If RAFStatus(i, 7, 1) < 3 And NumRepairServRemain > 0 Then
+                            Worksheets("London Siege").Shapes("ST" & Format(8 + 2 * j, "00")).Visible = True
+                        Else
+                            Worksheets("London Siege").Shapes("ST" & Format(8 + 2 * j, "00")).Visible = False
                         End If
                         Cells(7, 34 + 2 * j) = RAFStatus(i, 5, 1)
-                        Range(Cells(7, 34 + 2 * j).Address).NumberFormat = "General"
+                        Cells(7, 34 + 2 * j).NumberFormat = "General"
                         i = 4
                     End If
                 Next i
@@ -3609,10 +3610,16 @@ Sub RAFShopVisibility()
         If Cells(6, 36) = "" And Board(1, AirfieldLeft + 1, 1) = "     " Then Worksheets("London Siege").BT10.Visible = True
         If Cells(6, 38) = "" And Board(1, AirfieldLeft + 2, 1) = "     " Then Worksheets("London Siege").BT12.Visible = True
         If Cells(6, 40) = "" And Board(1, AirfieldLeft + 3, 1) = "     " Then Worksheets("London Siege").BT14.Visible = True
-        Worksheets("London Siege").SS19.Visible = True
+        
+        'Ammo Bunkers must survive in order for purchase of rockets
+        If NumBunkerRemain > 0 Then
+            Worksheets("London Siege").SS19.Visible = True
+        End If
+        
         Worksheets("London Siege").AirfieldPurchase.Visible = False
         Worksheets("London Siege").RocketArm.Visible = False
         Worksheets("London Siege").RAFShopReset.Visible = False
+    'If rocket/repair purchases have been made, only show options to confirm/reset
     ElseIf PurchaseCost > 0 Then
         Cells(2, 37) = "Total Cost: " & PurchaseCost
         Worksheets("London Siege").SS08.Visible = False
@@ -3622,6 +3629,7 @@ Sub RAFShopVisibility()
         Worksheets("London Siege").AirfieldPurchase.Visible = True
         Worksheets("London Siege").RocketArm.Visible = False
         Worksheets("London Siege").RAFShopReset.Visible = True
+    'If rockets have been moved between planes and storage, only show options to confirm
     ElseIf RAFRepairs(5, 2) <> 0 Then
         Cells(2, 37) = ""
         Worksheets("London Siege").BT08.Visible = False
@@ -3797,7 +3805,7 @@ Sub RepairShopPortal()
             End If
         End If
     Next j
-    If StructureStatus(RepairServ1, 1) < 4 And StructureStatus(RepairServ2, 1) < 4 Then
+    If NumRepairServRemain = 2 Then
         Cells(11, 32) = "__ = 50"
         Cells(12, 32) = "l=l = 75"
         Cells(13, 32) = "* = 100"
@@ -3823,7 +3831,7 @@ Sub RepairShopPortal()
                 Cells(18, 42) = ")|( = 1000"
             End If
         Next i
-    ElseIf StructureStatus(RepairServ1, 1) < 4 Or StructureStatus(RepairServ2, 1) < 4 Then                                      'Prices double if you lose a bunker
+    ElseIf NumRepairServRemain = 1 Then                                      'Prices double if you lose a bunker
         Cells(11, 32) = "__ = 100"
         Cells(12, 32) = "l=l = 150"
         Cells(13, 32) = "* = 200"
@@ -4009,9 +4017,7 @@ Function ShopSpin(i As Integer, j As Integer, dir As Integer)
         ElseIf StrIcon = ")|(" Then
             UpgradeCost = 1000
         End If
-        If StructureStatus(RepairServ1, 1) < 4 And StructureStatus(RepairServ2, 1) < 4 Then
-            'UpgradeCost is unaffected
-        ElseIf StructureStatus(RepairServ1, 1) < 4 Or StructureStatus(RepairServ2, 1) < 4 Then
+        If NumRepairServRemain = 1 Then
             UpgradeCost = UpgradeCost * 2
         End If
         ChangePoss = False
@@ -4077,24 +4083,27 @@ Function ShopSpin(i As Integer, j As Integer, dir As Integer)
                 Cells(7, 45) = Rockets + RocketsChange
             End If
         ElseIf i = 1 And j = 19 Then
-            If dir = 1 And RocketsChange > 0 Then
-                RocketsChange = RocketsChange - 1
+            If (dir = 1 And RocketsChange > 0) Or dir = 2 Then
+                spinSign = (-1) ^ dir
+                RocketsChange = RocketsChange + spinSign
+                If NumBunkerRemain = 1 Then
+                    PurchaseCost = PurchaseCost + 200 * spinSign
+                Else
+                    PurchaseCost = PurchaseCost + 100 * spinSign
+                End If
                 Cells(7, 45) = Rockets + RocketsChange
-                PurchaseCost = PurchaseCost - 100
-            ElseIf dir = 2 Then
-                RocketsChange = RocketsChange + 1
-                Cells(7, 45) = Rockets + RocketsChange
-                PurchaseCost = PurchaseCost + 100
             End If
         ElseIf i = 2 Then
-            If dir = 1 And RAFRepairs(RAFPos, 1) > 0 Then
-                RAFRepairs(RAFPos, 1) = RAFRepairs(RAFPos, 1) - 1
+            If (dir = 1 And RAFRepairs(RAFPos, 1) > 0) _
+            Or (dir = 2 And RAFStatus(RAFPos, 7, 1) + RAFRepairs(RAFPos, 1) < 3) Then
+                spinSign = (-1) ^ dir
+                RAFRepairs(RAFPos, 1) = RAFRepairs(RAFPos, 1) + spinSign
+                If NumRepairServRemain = 1 Then
+                    PurchaseCost = PurchaseCost + 400 * spinSign
+                Else
+                    PurchaseCost = PurchaseCost + 200 * spinSign
+                End If
                 Cells(4, 26 + j) = Int((RAFStatus(RAFPos, 7, 1) + RAFRepairs(RAFPos, 1)) / 3 * 100) & "%"
-                PurchaseCost = PurchaseCost - 200
-            ElseIf dir = 2 And RAFStatus(RAFPos, 7, 1) + RAFRepairs(RAFPos, 1) < 3 Then
-                RAFRepairs(RAFPos, 1) = RAFRepairs(RAFPos, 1) + 1
-                Cells(4, 26 + j) = Int((RAFStatus(RAFPos, 7, 1) + RAFRepairs(RAFPos, 1)) / 3 * 100) & "%"
-                PurchaseCost = PurchaseCost + 200
             End If
         End If
         RAFShopVisibility
@@ -4846,9 +4855,11 @@ Sub CleanHouse()
         AirfieldLeft = 0
         RepairServ1 = 0
         RepairServ2 = 0
+        NumRepairServRemain = 0
         ComC = 0
         Bunker1 = 0
         Bunker2 = 0
+        NumBunkerRemain = 0
         
         NumTurRemain = 0
         TurretPos = 0
@@ -5325,6 +5336,14 @@ Sub RenderColor(targetCell As Range, encoded As String)
                 .PatternTintAndShade = 0
             End With
         Case "blk"
+            With targetCell.Interior
+                .Pattern = xlSolid
+                .PatternColorIndex = xlAutomatic
+                .ThemeColor = xlThemeColorLight1
+                .TintAndShade = 0
+                .PatternTintAndShade = 0
+            End With
+        Case "blkout"
             With targetCell.Interior
                 .Pattern = xlSolid
                 .PatternColorIndex = xlAutomatic
