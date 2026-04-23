@@ -37,7 +37,7 @@ Destroyed structures will become rubble.
 ### Turrets - A
 You are given three defense turrets, denoted with the icon "A". Each turret can launch a single shot "." in one of eleven directions per turn. The shot must land exactly on the grid square with an enemy plane or fire to hit/intercept. Gameplay continues as long as one of these turrets (or any RAF) survive.
 
-### Repair Services - #
+### Repair Services - \#
 There are two Repair Services ("#"). These must be kept intact in order to repair your structures and RAF between rounds (see "Between Rounds: Repair Services"). If only one remains, repair prices will double.
 
 ### Ammo Bunkers - $
